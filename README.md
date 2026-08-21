@@ -22,26 +22,24 @@ Install with your favorite package manager. Here is an example using [lazy.nvim]
 ```lua
 {
     "Enalian/lua-addons.nvim",
-    config = function()
-        require("lua-addons").setup({
-            -- Global flag to enable/disable automatic updates
-            auto_update = true,
+    opts = {
+        -- Global flag to enable/disable automatic updates
+        auto_update = true,
+
+        -- Automatically reload lua_ls when .luarc.json is saved
+        watch_configs = true,
             
-            -- Automatically reload lua_ls when .luarc.json is saved
-            watch_configs = true,
-            
-            addons = {
-                -- Simple syntax (defaults to Git clone)
-                garrysmod = "Enalian/garrysmod-typings",
+        addons = {
+            -- Simple syntax (defaults to Git clone)
+            garrysmod = "Enalian/garrysmod-typings",
                 
-                -- Advanced syntax (GitHub Releases)
-                wiremod = {
-                    src = "Enalian/wiremod-typings",
-                    version = "numbered", -- Smart semver comparison
-                    check_interval = 86400, -- Check once a day (in seconds)
-                    release_name = "%.lua%.zip$"
-                }
+            -- Advanced syntax (GitHub Releases)
+            wiremod = {
+                src = "Enalian/wiremod-typings",
+                version = "numbered", -- Smart semver comparison
+                check_interval = 86400, -- Check once a day (in seconds)
+                release_name = "%.lua%.zip$"
             }
-        })
-    end
+        }
+    }
 }
