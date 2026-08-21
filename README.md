@@ -1,4 +1,4 @@
-# 📦 lua-addons.nvim
+# 📦 lua-ls-addons.nvim
 
 **lua-addons.nvim** is a powerful Neovim plugin designed to seamlessly manage, download, and configure Lua typings and environments for `lua_ls` (Lua Language Server). 
 
