@@ -111,6 +111,9 @@ function M.setup(opts)
 			if raw_config.src then
 				config.repo = utils.parse_repo(raw_config.src)
 			end
+			if raw_config.force_name then
+				config.force_name = raw_config.force_name
+			end
 			if raw_config.check_interval then
 				config.check_interval = raw_config.check_interval
 			end
