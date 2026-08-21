@@ -1,8 +1,8 @@
 # 📦 lua-ls-addons.nvim
 
-**lua-addons.nvim** is a powerful Neovim plugin designed to seamlessly manage, download, and configure Lua typings and environments for `lua_ls` (Lua Language Server). 
+**lua-ls-addons.nvim** is a powerful Neovim plugin designed to seamlessly manage, download, and configure Lua typings and environments for `lua_ls` (Lua Language Server). 
 
-Instead of manually downloading typings, updating paths, and configuring globals for every project, `lua-addons` automates the entire process. It reads your project's `.luarc.json`, automatically resolves dependencies, and injects the correct libraries and diagnostic rules directly into your LSP on the fly.
+Instead of manually downloading typings, updating paths, and configuring globals for every project, `lua-ls-addons` automates the entire process. It reads your project's `.luarc.json`, automatically resolves dependencies, and injects the correct libraries and diagnostic rules directly into your LSP on the fly.
 
 ## ✨ Features
 
@@ -21,7 +21,7 @@ Install with your favorite package manager. Here is an example using [lazy.nvim]
 
 ```lua
 {
-    "Enalian/lua-addons.nvim",
+    "Enalian/lua-ls-addons.nvim",
     opts = {
         -- Global flag to enable/disable automatic updates
         auto_update = true,
@@ -31,7 +31,10 @@ Install with your favorite package manager. Here is an example using [lazy.nvim]
             
         addons = {
             -- Simple syntax (defaults to Git clone)
-            garrysmod = "Enalian/garrysmod-typings",
+            garrysmod = {
+		        src = "luttje/glua-api-snippets",
+		        version = "timestamp",
+	        },
                 
             -- Advanced syntax (GitHub Releases)
             wiremod = {
