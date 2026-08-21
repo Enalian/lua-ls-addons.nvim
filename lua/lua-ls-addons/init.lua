@@ -8,6 +8,7 @@
 
 ---@class LuaAddonConfig
 ---@field src? string GitHub repository in "owner/repo" format or full URL.
+---@field force_name? string Override the display name of the addon, ignoring the manifest.
 ---@field check_interval? number Interval between update checks in seconds (default: 14 days).
 ---@field release_name? string Regex pattern to match the release asset name (default: "%.lua%.zip$").
 ---@field branch? string Git branch to clone (if version type is "commit").
@@ -96,6 +97,7 @@ function M.setup(opts)
 	for key, raw_config in pairs(addons) do
 		local config = {
 			repo = nil,
+			force_name = nil,
 			check_interval = state.DEFAULT_INTERVAL,
 			release_name = "%.lua%.zip$",
 			branch = nil,

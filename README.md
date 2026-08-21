@@ -34,11 +34,13 @@ Install with your favorite package manager. Here is an example using [lazy.nvim]
             garrysmod = {
                 src = "luttje/glua-api-snippets",
                 version = "timestamp",
+                force_name = "Garry's Mod",
             },
                 
             -- Advanced syntax (GitHub Releases)
             wiremod = {
                 src = "Enalian/wiremod-typings",
+                force_name = "Wiremod (Custom)", -- Override the display name
                 version = "numbered", -- Smart semver comparison
                 check_interval = 86400, -- Check once a day (in seconds)
                 release_name = "%.lua%.zip$"
@@ -52,7 +54,9 @@ Install with your favorite package manager. Here is an example using [lazy.nvim]
 
 When configuring an addon in the `addons` table, you can use the following fields (beyond the ones shown in the `wiremod` example above):
 
+- **`src`** *(string)*: GitHub repository in `owner/repo` format or a full URL.
 - **`branch`** *(string)*: Specific Git branch to clone (only applies if the version strategy is `"commit"`).
+- **`force_name`** *(string)*: Override the display name of the addon in UI notifications, ignoring the manifest.
 - **`auto_update`** *(boolean)*: Overrides the global `auto_update` setting specifically for this addon.
 - **`version`** *(string | boolean | table)*: The update detection strategy. 
   - `"commit"` (default) - updates via `git pull`.

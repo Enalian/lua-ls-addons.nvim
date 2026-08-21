@@ -35,8 +35,12 @@ function M.setup(api)
 			return
 		end
 
+		local manifest = lsp.read_addon_manifest(addon.path) or {}
+		local user_config = state.addon_configs[opts.args] or {}
+		local display_name = user_config.force_name or manifest.name or addon.name:gsub("^%l", string.upper)
+
 		local lines = {
-			" 󰢱 Addon: " .. addon.name,
+			" 󰢱 Addon: " .. display_name .. " (" .. addon.name .. ")",
 			" ───────────────",
 			" 󰏗 Version: " .. addon.version,
 			"  Repository: " .. addon.repo,

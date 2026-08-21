@@ -150,8 +150,9 @@ function M.on_init(client, skip_notify)
 
 				local addon_path = state.loaded_addons[addon_name].path
 				local manifest = M.read_addon_manifest(addon_path) or {}
-				local display_name = manifest.name or addon_name:gsub("^%l", string.upper)
 				local custom_config = manifest.lua_ls or {}
+				local user_config = state.addon_configs[addon_name] or {}
+				local display_name = user_config.force_name or manifest.name or addon_name:gsub("^%l", string.upper)
 
 				if not vim.tbl_contains(settings.workspace.library, addon_path) then
 					table.insert(settings.workspace.library, addon_path)
