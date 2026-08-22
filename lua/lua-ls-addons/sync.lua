@@ -4,7 +4,7 @@ local utils = require("lua-ls-addons.utils")
 
 local M = {}
 
-local CHECK_CACHE_FILE = config.base_dir .. "/" .. config.cache_name
+local CHECK_CACHE_FILE = config.base_dir .. "/" .. (config.cache_name or "check_cache.json")
 
 --- Loads the update check cache timestamps.
 ---@return table<string, integer>
@@ -54,10 +54,10 @@ local function get_latest_commit(repo)
 	return result:match("^(%w+)")
 end
 
---- Retrieves the latest release tag matching the pattern.
+--- Retrieves the latest release tag or title matching the pattern.
 ---@param repo string Repository in 'author/repo' format.
 ---@param pattern string Lua regex pattern to match the asset name.
----@return string|nil tag_name The latest release tag, or nil if failed.
+---@return string|nil release_version The latest release version name/tag, or nil if failed.
 local function get_latest_release_tag(repo, pattern)
 	if vim.fn.executable("curl") == 0 then
 		return nil
@@ -71,11 +71,11 @@ local function get_latest_release_tag(repo, pattern)
 	handle:close()
 
 	local ok, release = pcall(vim.json.decode, json_str)
-	if ok and release and release.tag_name then
+	if ok and release then
 		if release.assets then
 			for _, asset in ipairs(release.assets) do
 				if asset.name:match(pattern) then
-					return release.tag_name
+					return (release.name and release.name ~= "") and release.name or release.tag_name
 				end
 			end
 		end
@@ -115,7 +115,7 @@ end
 ---@param version string Release tag or 'latest'.
 ---@param pattern string Lua regex pattern to match the asset name.
 ---@return boolean success True if successful.
----@return string|nil actual_version The resolved tag name of the release.
+---@return string|nil actual_version The resolved version string (release name or tag).
 local function download_release(repo, target_dir, version, pattern)
 	if vim.fn.executable("curl") == 0 then
 		utils.log_error("'curl' is not installed, cannot download release.")
@@ -163,7 +163,8 @@ local function download_release(repo, target_dir, version, pattern)
 	vim.fn.system(string.format("unzip -q %s -d %s", zip_path, target_dir))
 	vim.fn.delete(zip_path)
 
-	return true, release.tag_name
+	local release_version = (release.name and release.name ~= "") and release.name or release.tag_name
+	return true, release_version
 end
 
 --- Ensures the requested addon is installed locally, downloading it if necessary.
@@ -172,7 +173,7 @@ end
 ---@param force_update? boolean Override to force a network check bypassing the interval.
 ---@param custom_interval? integer Optional per-addon check interval in seconds.
 ---@return string|nil path The absolute path to the addon directory.
----@return string|nil actual_ver The actual version (hash or tag) resolved.
+---@return string|nil actual_ver The actual version (hash or tag/title) resolved.
 function M.ensure_installed(parsed, locked_version, force_update, custom_interval)
 	local target_version = locked_version or parsed.version
 	local is_latest = (parsed.version == "latest")

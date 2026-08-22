@@ -141,10 +141,13 @@ local function process_tree(addon_raw, lockfile, settings, visited, visiting, ha
 		end
 
 		if addon_path then
-			if actual_ver then
-				used_vers[name] = actual_ver
-			end
 			local manifest = M.read_manifest(addon_path) or {}
+
+			-- Version resolution: Manifest version -> Actual sync version -> Raw request/commit data
+			local final_version = manifest.version or actual_ver or req_str
+			if final_version then
+				used_vers[name] = final_version
+			end
 
 			if manifest.base then
 				process_tree(manifest.base, lockfile, settings, visited, visiting, has_upd, used_vers, force_update)
