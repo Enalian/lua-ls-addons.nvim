@@ -202,7 +202,6 @@ end
 ---@param force_update? boolean If true, forces the plugin to fetch the latest updates.
 ---@return boolean
 function M.on_init(client, skip_notify, force_update)
-	local global_start = vim.uv.hrtime()
 	local path = client.workspace_folders and client.workspace_folders[1].name
 	if not path then
 		return true
@@ -251,12 +250,6 @@ function M.on_init(client, skip_notify, force_update)
 			if not skip_notify then
 				client.rpc.notify("workspace/didChangeConfiguration", { settings = client.config.settings })
 			end
-			local global_elapsed = math.floor((vim.uv.hrtime() - global_start) / 1000000)
-			utils.log_info(
-				string.format("Lua LS environment initialized globally in %d ms", global_elapsed),
-				"󰢱",
-				"DiagnosticInfo"
-			)
 		end
 	end
 	return true
