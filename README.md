@@ -90,9 +90,6 @@ Addon authors can further control the environment by placing a `__manifest.json`
     "base": "garrysmod",
     "depends_on": ["Enalian/another-addon@v2.0.0"],
     "lua_ls": {
-        "workspace": {
-            "library": ["lua", "globals"]
-        },
         "diagnostics": {
             "globals": ["CLIENT", "SERVER"]
         }
