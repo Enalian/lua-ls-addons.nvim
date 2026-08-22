@@ -1,6 +1,6 @@
 local state = require("lua-ls-addons.state")
 local utils = require("lua-ls-addons.utils")
-local config = require("lua-ls-addons.config")
+local config = require("lua-addons.config")
 local sync = require("lua-ls-addons.sync")
 
 local M = {}
@@ -152,17 +152,11 @@ local function process_tree(addon_raw, lockfile, settings, visited, visiting, ha
 				or manifest.name
 				or name:gsub("^%l", string.upper)
 
+			-- Always add the root addon path directly (like Garry's Mod structure)
 			if not vim.tbl_contains(settings.workspace.library, addon_path) then
 				table.insert(settings.workspace.library, addon_path)
 			end
-			if custom.workspace and custom.workspace.library then
-				for _, lib in ipairs(custom.workspace.library) do
-					local full = (addon_path .. "/" .. lib):gsub("//", "/")
-					if not vim.tbl_contains(settings.workspace.library, full) then
-						table.insert(settings.workspace.library, full)
-					end
-				end
-			end
+
 			if custom.diagnostics and custom.diagnostics.globals then
 				for _, g in ipairs(custom.diagnostics.globals) do
 					if not vim.tbl_contains(settings.diagnostics.globals, g) then
@@ -179,7 +173,6 @@ local function process_tree(addon_raw, lockfile, settings, visited, visiting, ha
 				end
 			end
 
-			utils.log_info(d_name .. " loaded", "󰢱", "DiagnosticInfo")
 			has_upd.status = true
 		end
 	end
@@ -202,15 +195,16 @@ function M.on_init(client, skip_notify, force_update)
 	local luarc = read_luarc(path)
 	if luarc and type(luarc.addons) == "table" then
 		local lockfile = rw_lockfile(path, nil)
-		local visited, visiting, used_vers, has_upd = {}, {}, {}, { status = false }
-
-		local settings = client.config.settings.Lua or {}
+		local settings = client.config.settings.Lua
+			or { runtime = {}, workspace = { library = {} }, diagnostics = { globals = {}, disable = {} } }
 		settings.runtime = settings.runtime or {}
 		settings.workspace = settings.workspace or {}
 		settings.workspace.library = settings.workspace.library or {}
 		settings.diagnostics = settings.diagnostics or {}
 		settings.diagnostics.globals = settings.diagnostics.globals or {}
 		settings.diagnostics.disable = settings.diagnostics.disable or {}
+
+		local visited, visiting, used_vers, has_upd = {}, {}, {}, { status = false }
 
 		for _, req in ipairs(luarc.addons) do
 			process_tree(req, lockfile, settings, visited, visiting, has_upd, used_vers, force_update)
@@ -234,7 +228,6 @@ function M.on_init(client, skip_notify, force_update)
 
 		if changed then
 			rw_lockfile(path, used_vers)
-			utils.log_info("Updated " .. config.lockfile_name, "", "DiagnosticInfo")
 		end
 
 		if has_upd.status then
@@ -242,6 +235,7 @@ function M.on_init(client, skip_notify, force_update)
 			if not skip_notify then
 				client.rpc.notify("workspace/didChangeConfiguration", { settings = client.config.settings })
 			end
+			utils.log_info("Lua LS environment successfully loaded!", "󰢱", "DiagnosticInfo")
 		end
 	end
 	return true
@@ -260,7 +254,7 @@ function M.setup_watcher()
 			end
 			for _, client in ipairs(clients) do
 				if M.on_init(client, false, false) then
-					utils.log_info("Environment updated!", "", "DiagnosticInfo")
+					-- notification is handled inside on_init
 				end
 			end
 		end,

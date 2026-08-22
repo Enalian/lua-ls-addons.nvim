@@ -1,16 +1,14 @@
+local state = require("lua-ls-addons.state")
 local M = {}
 
---- Checks if a fancy notification plugin is available.
----@return boolean
 local function has_fancy_notify()
 	return package.loaded["notify"] ~= nil or package.loaded["noice"] ~= nil
 end
 
---- Logs an informational message.
----@param msg string The message to display.
----@param icon? string Optional icon.
----@param hl? string Optional highlight group.
 function M.log_info(msg, icon, hl)
+	if not state.global_config.notifications then
+		return
+	end
 	if has_fancy_notify() then
 		vim.notify(msg, vim.log.levels.INFO, { title = "lua-ls-addons", icon = icon or "" })
 	else
@@ -18,10 +16,10 @@ function M.log_info(msg, icon, hl)
 	end
 end
 
---- Logs a warning message.
----@param msg string The message to display.
----@param icon? string Optional icon.
 function M.log_warn(msg, icon)
+	if not state.global_config.notifications then
+		return
+	end
 	if has_fancy_notify() then
 		vim.notify(msg, vim.log.levels.WARN, { title = "lua-ls-addons", icon = icon or "" })
 	else
@@ -29,10 +27,10 @@ function M.log_warn(msg, icon)
 	end
 end
 
---- Logs an error message.
----@param msg string The message to display.
----@param icon? string Optional icon.
 function M.log_error(msg, icon)
+	if not state.global_config.notifications then
+		return
+	end
 	if has_fancy_notify() then
 		vim.notify(msg, vim.log.levels.ERROR, { title = "lua-ls-addons", icon = icon or "" })
 	else

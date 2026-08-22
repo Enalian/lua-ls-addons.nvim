@@ -7,6 +7,7 @@ local M = {}
 --- LSP on_init hook to be passed to nvim-lspconfig.
 ---@param client vim.lsp.Client
 ---@param skip_notify? boolean
+---@param force_update? boolean
 ---@return boolean
 M.on_init = lsp.on_init
 
@@ -17,6 +18,7 @@ function M.setup(opts)
 
 	state.global_config.auto_update = opts.auto_update ~= false
 	state.global_config.watch_configs = opts.watch_configs ~= false
+	state.global_config.notifications = opts.notifications ~= false
 	state.aliases = type(opts.aliases) == "table" and opts.aliases or {}
 
 	commands.setup(M)
