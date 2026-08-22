@@ -1,6 +1,6 @@
 local state = require("lua-ls-addons.state")
 local utils = require("lua-ls-addons.utils")
-local config = require("lua-addons.config")
+local config = require("lua-ls-addons.config")
 local sync = require("lua-ls-addons.sync")
 
 local M = {}
