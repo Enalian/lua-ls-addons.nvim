@@ -94,6 +94,7 @@ end
 
 --- Recursively processes dependencies and injects them into the settings
 local function process_tree(addon_raw, lockfile, settings, visited, visiting, has_upd, used_vers, force_update)
+	local start_time = vim.uv.hrtime()
 	local req_str = type(addon_raw) == "table" and addon_raw.addon or addon_raw
 	local parsed = utils.parse_addon_string(req_str, state.aliases)
 	local name = parsed.original_name
@@ -118,6 +119,12 @@ local function process_tree(addon_raw, lockfile, settings, visited, visiting, ha
 			table.insert(settings.workspace.library, vim.env.VIMRUNTIME)
 		end
 		has_upd.status = true
+		visiting[name] = false
+		visited[name] = true
+
+		local elapsed_ms = math.floor((vim.uv.hrtime() - start_time) / 1000000)
+		utils.log_info(string.format("Addon Vim successfully loaded in %d ms", elapsed_ms), "󰢱", "DiagnosticInfo")
+		return
 	else
 		local addon_path, actual_ver = nil, nil
 
@@ -174,6 +181,16 @@ local function process_tree(addon_raw, lockfile, settings, visited, visiting, ha
 			end
 
 			has_upd.status = true
+			visiting[name] = false
+			visited[name] = true
+
+			local elapsed_ms = math.floor((vim.uv.hrtime() - start_time) / 1000000)
+			utils.log_info(
+				string.format("Addon %s successfully loaded in %d ms", d_name, elapsed_ms),
+				"󰢱",
+				"DiagnosticInfo"
+			)
+			return
 		end
 	end
 
@@ -235,7 +252,6 @@ function M.on_init(client, skip_notify, force_update)
 			if not skip_notify then
 				client.rpc.notify("workspace/didChangeConfiguration", { settings = client.config.settings })
 			end
-			utils.log_info("Lua LS environment successfully loaded!", "󰢱", "DiagnosticInfo")
 		end
 	end
 	return true
@@ -254,7 +270,7 @@ function M.setup_watcher()
 			end
 			for _, client in ipairs(clients) do
 				if M.on_init(client, false, false) then
-					-- notification is handled inside on_init
+					-- environment updated via watcher
 				end
 			end
 		end,
