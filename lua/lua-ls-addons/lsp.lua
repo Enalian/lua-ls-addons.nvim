@@ -267,9 +267,7 @@ function M.setup_watcher()
 				return
 			end
 			for _, client in ipairs(clients) do
-				if M.on_init(client, false, false) then
-					-- environment updated via watcher
-				end
+				M.on_init(client, false, false)
 			end
 		end,
 		desc = "Hot reload lua_ls when config files change",
