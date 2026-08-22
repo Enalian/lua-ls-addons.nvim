@@ -5,7 +5,6 @@ local utils = require("lua-ls-addons.utils")
 local M = {}
 
 local CHECK_CACHE_FILE = config.base_dir .. "/" .. config.cache_name
-local TWO_WEEKS = config.default_update_time
 
 --- Loads the update check cache timestamps.
 ---@return table<string, integer>
@@ -170,20 +169,22 @@ end
 --- Ensures the requested addon is installed locally, downloading it if necessary.
 ---@param parsed ParsedAddonString The parsed addon data.
 ---@param locked_version? string The version locked in the project's lockfile.
----@param force_update? boolean Override to force a network check bypassing the 2-week interval.
+---@param force_update? boolean Override to force a network check bypassing the interval.
+---@param custom_interval? integer Optional per-addon check interval in seconds.
 ---@return string|nil path The absolute path to the addon directory.
 ---@return string|nil actual_ver The actual version (hash or tag) resolved.
-function M.ensure_installed(parsed, locked_version, force_update)
+function M.ensure_installed(parsed, locked_version, force_update, custom_interval)
 	local target_version = locked_version or parsed.version
 	local is_latest = (parsed.version == "latest")
 	local auto_update = state.global_config.auto_update
+	local interval = custom_interval or state.global_config.check_interval
 
 	if is_latest and auto_update then
 		local cache = load_check_cache()
 		local last_checked = cache[parsed.repo] or 0
 		local now = os.time()
 
-		if force_update or (now - last_checked > TWO_WEEKS) or not locked_version then
+		if force_update or (now - last_checked > interval) or not locked_version then
 			local remote_ver = nil
 			if parsed.is_release then
 				remote_ver = get_latest_release_tag(parsed.repo, parsed.release_pattern)

@@ -131,11 +131,10 @@ local function process_tree(addon_raw, lockfile, settings, visited, visiting, ha
 		if req_str:match("^[/~]") or req_str:match("^[A-Za-z]:\\") then
 			addon_path = vim.fn.expand(req_str)
 		else
-			if lockfile[name] then
-				parsed.version = lockfile[name]
-			end
+			local locked_ver = lockfile[name]
 			local auto = type(addon_raw) == "table" and addon_raw.auto_update or force_update
-			addon_path, actual_ver = sync.ensure_installed(parsed, auto)
+			local interval = type(addon_raw) == "table" and addon_raw.check_interval or nil
+			addon_path, actual_ver = sync.ensure_installed(parsed, locked_ver, auto, interval)
 		end
 
 		if addon_path then
@@ -159,7 +158,6 @@ local function process_tree(addon_raw, lockfile, settings, visited, visiting, ha
 				or manifest.name
 				or name:gsub("^%l", string.upper)
 
-			-- Always add the root addon path directly (like Garry's Mod structure)
 			if not vim.tbl_contains(settings.workspace.library, addon_path) then
 				table.insert(settings.workspace.library, addon_path)
 			end
@@ -204,6 +202,7 @@ end
 ---@param force_update? boolean If true, forces the plugin to fetch the latest updates.
 ---@return boolean
 function M.on_init(client, skip_notify, force_update)
+	local global_start = vim.uv.hrtime()
 	local path = client.workspace_folders and client.workspace_folders[1].name
 	if not path then
 		return true
@@ -252,6 +251,12 @@ function M.on_init(client, skip_notify, force_update)
 			if not skip_notify then
 				client.rpc.notify("workspace/didChangeConfiguration", { settings = client.config.settings })
 			end
+			local global_elapsed = math.floor((vim.uv.hrtime() - global_start) / 1000000)
+			utils.log_info(
+				string.format("Lua LS environment initialized globally in %d ms", global_elapsed),
+				"󰢱",
+				"DiagnosticInfo"
+			)
 		end
 	end
 	return true
