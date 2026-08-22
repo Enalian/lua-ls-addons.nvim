@@ -3,7 +3,7 @@
 ---@field watch_configs? boolean Automatically reload lua_ls when project config files (.luarc.json) are saved (default: true).
 ---@field notifications? boolean Show notification messages when environments are loaded/updated (default: true).
 ---@field check_interval? integer Default update check interval in seconds (default: 14 days / 1209600).
----@field aliases? table<string, string> Dictionary mapping short addon names to their full GitHub repositories.
+---@field aliases? table<string, any> Dictionary mapping short names to repositories or full config tables (supports `default = true`)
 ---@example
 --- require("lua-ls-addons").setup({
 ---     auto_update = true,

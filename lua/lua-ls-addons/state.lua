@@ -5,7 +5,7 @@
 ---@field check_interval integer Global update check interval in seconds.
 
 ---@class LuaAddonState
----@field aliases table<string, string> Mapping of short names to GitHub repositories.
+---@field aliases table<string, any> Mapping of short names to GitHub repositories or config tables.
 ---@field global_config LuaAddonGlobalConfig Global plugin settings.
 
 ---@type LuaAddonState

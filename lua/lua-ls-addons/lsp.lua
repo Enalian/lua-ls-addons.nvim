@@ -94,7 +94,11 @@ end
 
 --- Recursively processes dependencies and injects them into the settings
 local function process_tree(addon_raw, lockfile, settings, visited, visiting, has_upd, used_vers, force_update)
-	local start_time = vim.uv.hrtime()
+	-- Expand string alias if it resolves to a full configuration table
+	if type(addon_raw) == "string" and type(state.aliases[addon_raw]) == "table" then
+		addon_raw = state.aliases[addon_raw]
+	end
+
 	local req_str = type(addon_raw) == "table" and addon_raw.addon or addon_raw
 	local parsed = utils.parse_addon_string(req_str, state.aliases)
 	local name = parsed.original_name
@@ -122,8 +126,7 @@ local function process_tree(addon_raw, lockfile, settings, visited, visiting, ha
 		visiting[name] = false
 		visited[name] = true
 
-		local elapsed_ms = math.floor((vim.uv.hrtime() - start_time) / 1000000)
-		utils.log_info(string.format("Addon Vim successfully loaded in %d ms", elapsed_ms), "󰢱", "DiagnosticInfo")
+		utils.log_info("Addon Vim successfully loaded", "󰢱", "DiagnosticInfo")
 		return
 	else
 		local addon_path, actual_ver = nil, nil
@@ -182,12 +185,7 @@ local function process_tree(addon_raw, lockfile, settings, visited, visiting, ha
 			visiting[name] = false
 			visited[name] = true
 
-			local elapsed_ms = math.floor((vim.uv.hrtime() - start_time) / 1000000)
-			utils.log_info(
-				string.format("Addon %s successfully loaded in %d ms", d_name, elapsed_ms),
-				"󰢱",
-				"DiagnosticInfo"
-			)
+			utils.log_info(string.format("Addon %s successfully loaded", d_name), "󰢱", "DiagnosticInfo")
 			return
 		end
 	end
