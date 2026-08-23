@@ -17,11 +17,29 @@ local function read_luarc(path)
 	if vim.fn.filereadable(filepath) == 1 then
 		local f = io.open(filepath, "r")
 		if f then
-			local content = f:read("*a"):gsub("/%*.-%*/", ""):gsub("//[^\n]*", "")
+			local content = f:read("*a")
 			f:close()
+
+			-- 1. Protect URLs from being stripped (masking https:// and http://)
+			content = content:gsub("https://", "HTTPS_MASK")
+			content = content:gsub("http://", "HTTP_MASK")
+
+			-- 2. Strip block and line comments
+			content = content:gsub("/%*.-%*/", ""):gsub("//[^\n]*", "")
+
+			-- 3. Restore URLs
+			content = content:gsub("HTTPS_MASK", "https://")
+			content = content:gsub("HTTP_MASK", "http://")
+
+			-- 4. Remove trailing commas (e.g., `[1, 2, ],` -> `[1, 2 ]`)
+			content = content:gsub(",(%s*[}%]])", "%1")
+
 			local ok, parsed = pcall(vim.json.decode, content)
 			if ok and type(parsed) == "table" then
 				return parsed
+			else
+				-- Now it will actually tell you if you have a typo in your JSON!
+				utils.log_error("Failed to parse " .. filepath:match("([^/]+)$") .. " (Syntax error)", "")
 			end
 		end
 	end
@@ -33,7 +51,7 @@ local function read_luarc(path)
 		local chunk = loadfile(rc_path, "t", env)
 		if chunk then
 			local ok, _ = pcall(chunk)
-			if ok and type(env.addons) == "table" then
+			if ok and (type(env.addons) == "table" or type(env.addon) == "table") then
 				return env
 			end
 		end
