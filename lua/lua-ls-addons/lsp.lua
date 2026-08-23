@@ -221,8 +221,16 @@ end
 ---@param force_update? boolean If true, forces the plugin to fetch the latest updates.
 ---@return boolean
 function M.on_init(client, skip_notify, force_update)
-	local path = client.workspace_folders and client.workspace_folders[1].name
+	local path = nil
+	if client.workspace_folders and client.workspace_folders[1] then
+		path = client.workspace_folders[1].name
+	end
+	if not path and client.config and client.config.root_dir then
+		path = client.config.root_dir
+	end
+
 	if not path then
+		utils.log_warn("Lua LS started without a root directory!", "")
 		return true
 	end
 
