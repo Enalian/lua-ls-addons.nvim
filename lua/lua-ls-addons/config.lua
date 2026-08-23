@@ -23,6 +23,6 @@
 return {
 	base_dir = vim.fn.stdpath("data") .. "/lua-addons",
 	manifest_name = "__manifest.json",
-	lockfile_name = "lua-addons.lock",
+	lockfile_name = ".lua-addons.lock",
 	cache_name = "check_cache.json",
 }

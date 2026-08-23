@@ -235,7 +235,6 @@ function M.on_init(client, skip_notify, force_update)
 	end
 
 	local luarc = read_luarc(path)
-	print("Checking path: " .. path)
 	if luarc and type(luarc.addons) == "table" then
 		local lockfile = rw_lockfile(path, nil)
 		local settings = client.config.settings.Lua

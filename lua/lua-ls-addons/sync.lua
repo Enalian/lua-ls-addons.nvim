@@ -224,6 +224,8 @@ function M.ensure_installed(parsed, locked_version, force_update, custom_interva
 	if success then
 		utils.log_info(string.format("Installed %s (%s)", parsed.original_name, target_version:sub(1, 7)), "")
 		return target_dir, target_version
+	else
+		utils.log_error(string.format("Failed to download or find release for '%s'", parsed.original_name))
 	end
 
 	return nil, nil
