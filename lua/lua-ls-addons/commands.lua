@@ -19,10 +19,14 @@ local function init_manifest(force)
 	local folder_name = vim.fn.fnamemodify(cwd, ":t")
 	local default_name = folder_name:gsub("^%l", string.upper)
 
+	-- Auto-detect "lua" subfolder if it exists in the project root
+	local default_path = vim.fn.isdirectory(cwd .. "/lua") == 1 and "lua" or "."
+
 	local template = {
 		"{\n",
 		'\t"name": "' .. default_name .. '",\n',
 		'\t"version": "1.0.0",\n',
+		'\t"path": "' .. default_path .. '",\n',
 		'\t"base": "garrysmod",\n',
 		'\t"depends_on": [],\n',
 		'\t"lua_ls": {\n',

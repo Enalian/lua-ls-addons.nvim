@@ -20,7 +20,7 @@ local function read_luarc(path)
 			local content = f:read("*a")
 			f:close()
 
-			-- 1. Protect URLs from being stripped (masking https:// and http://)
+			-- 1. Protect URLs from being stripped
 			content = content:gsub("https://", "HTTPS_MASK")
 			content = content:gsub("http://", "HTTP_MASK")
 
@@ -31,14 +31,13 @@ local function read_luarc(path)
 			content = content:gsub("HTTPS_MASK", "https://")
 			content = content:gsub("HTTP_MASK", "http://")
 
-			-- 4. Remove trailing commas (e.g., `[1, 2, ],` -> `[1, 2 ]`)
+			-- 4. Remove trailing commas
 			content = content:gsub(",(%s*[}%]])", "%1")
 
 			local ok, parsed = pcall(vim.json.decode, content)
 			if ok and type(parsed) == "table" then
 				return parsed
 			else
-				-- Now it will actually tell you if you have a typo in your JSON!
 				utils.log_error("Failed to parse " .. filepath:match("([^/]+)$") .. " (Syntax error)", "")
 			end
 		end
@@ -161,7 +160,6 @@ local function process_tree(addon_raw, lockfile, settings, visited, visiting, ha
 		if addon_path then
 			local manifest = M.read_manifest(addon_path) or {}
 
-			-- Version resolution: Manifest version -> Actual sync version -> Raw request/commit data
 			local final_version = manifest.version or actual_ver or req_str
 			if final_version then
 				used_vers[name] = final_version
@@ -182,8 +180,29 @@ local function process_tree(addon_raw, lockfile, settings, visited, visiting, ha
 				or manifest.name
 				or name:gsub("^%l", string.upper)
 
-			if not vim.tbl_contains(settings.workspace.library, addon_path) then
-				table.insert(settings.workspace.library, addon_path)
+			-- Resolve custom subdirectory path(s) (e.g., "lua") from config table or manifest
+			local sub_paths = (type(addon_raw) == "table" and addon_raw.path) or manifest.path
+			if sub_paths then
+				local paths_list = type(sub_paths) == "string" and { sub_paths } or sub_paths
+				for _, sub in ipairs(paths_list) do
+					local clean_sub = sub:gsub("^[/\\]+", ""):gsub("[/\\]+$", "")
+					local full_lib_path = (clean_sub == "" or clean_sub == ".") and addon_path
+						or (addon_path .. "/" .. clean_sub)
+					if vim.fn.isdirectory(full_lib_path) == 1 then
+						if not vim.tbl_contains(settings.workspace.library, full_lib_path) then
+							table.insert(settings.workspace.library, full_lib_path)
+						end
+					else
+						utils.log_warn(string.format("Addon '%s': path '%s' not found, using root", d_name, clean_sub))
+						if not vim.tbl_contains(settings.workspace.library, addon_path) then
+							table.insert(settings.workspace.library, addon_path)
+						end
+					end
+				end
+			else
+				if not vim.tbl_contains(settings.workspace.library, addon_path) then
+					table.insert(settings.workspace.library, addon_path)
+				end
 			end
 
 			if custom.diagnostics and custom.diagnostics.globals then
@@ -230,52 +249,54 @@ function M.on_init(client, skip_notify, force_update)
 	end
 
 	if not path then
-		utils.log_warn("Lua LS started without a root directory!", "")
 		return true
 	end
 
 	local luarc = read_luarc(path)
-	if luarc and type(luarc.addons) == "table" then
-		local lockfile = rw_lockfile(path, nil)
-		local settings = client.config.settings.Lua
-			or { runtime = {}, workspace = { library = {} }, diagnostics = { globals = {}, disable = {} } }
-		settings.runtime = settings.runtime or {}
-		settings.workspace = settings.workspace or {}
-		settings.workspace.library = settings.workspace.library or {}
-		settings.diagnostics = settings.diagnostics or {}
-		settings.diagnostics.globals = settings.diagnostics.globals or {}
-		settings.diagnostics.disable = settings.diagnostics.disable or {}
+	if luarc then
+		local addons_list = luarc.addons or luarc.addon
+		if type(addons_list) == "table" then
+			local lockfile = rw_lockfile(path, nil)
+			local settings = client.config.settings.Lua
+				or { runtime = {}, workspace = { library = {} }, diagnostics = { globals = {}, disable = {} } }
+			settings.runtime = settings.runtime or {}
+			settings.workspace = settings.workspace or {}
+			settings.workspace.library = settings.workspace.library or {}
+			settings.diagnostics = settings.diagnostics or {}
+			settings.diagnostics.globals = settings.diagnostics.globals or {}
+			settings.diagnostics.disable = settings.diagnostics.disable or {}
 
-		local visited, visiting, used_vers, has_upd = {}, {}, {}, { status = false }
+			local visited, visiting, used_vers, has_upd = {}, {}, {}, { status = false }
 
-		for _, req in ipairs(luarc.addons) do
-			process_tree(req, lockfile, settings, visited, visiting, has_upd, used_vers, force_update)
-		end
-
-		local changed = false
-		for k, v in pairs(used_vers) do
-			if lockfile[k] ~= v then
-				changed = true
-				break
+			for _, req in ipairs(addons_list) do
+				process_tree(req, lockfile, settings, visited, visiting, has_upd, used_vers, force_update)
 			end
-		end
-		if not changed then
-			for k, _ in pairs(lockfile) do
-				if not used_vers[k] then
+
+			local changed = false
+			for k, v in pairs(used_vers) do
+				if lockfile[k] ~= v then
 					changed = true
 					break
 				end
 			end
-		end
+			if not changed then
+				for k, _ in pairs(lockfile) do
+					if not used_vers[k] then
+						changed = true
+						break
+					end
+				end
+			end
 
-		if changed then
-			rw_lockfile(path, used_vers)
-		end
+			if changed then
+				rw_lockfile(path, used_vers)
+			end
 
-		if has_upd.status then
-			client.config.settings.Lua = settings
-			if not skip_notify then
-				client.rpc.notify("workspace/didChangeConfiguration", { settings = client.config.settings })
+			if has_upd.status then
+				client.config.settings.Lua = settings
+				if not skip_notify then
+					client.rpc.notify("workspace/didChangeConfiguration", { settings = client.config.settings })
+				end
 			end
 		end
 	end

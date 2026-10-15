@@ -1,3 +1,4 @@
 {
-    "name": "lua-ls-addons"
+    "name": "lua-ls-addons",
+    "path": "lua"
 }
