@@ -52,6 +52,82 @@ function M.log_error(msg, icon)
 	end
 end
 
+--- Formats a raw folder/repo string into a pretty Title Case name.
+--- Example: "my_cool-addon" -> "My Cool Addon"
+---@param raw_name string
+---@return string
+function M.format_addon_name(raw_name)
+	local cleaned = raw_name:gsub("[_%-]+", " ")
+	return cleaned:gsub("(%a)([%w']*)", function(first, rest)
+		return first:upper() .. rest:lower()
+	end)
+end
+
+local IGNORED_DIRS = {
+	materials = true,
+	models = true,
+	sound = true,
+	maps = true,
+	resource = true,
+	particles = true,
+	backgrounds = true,
+	scenes = true,
+	shaders = true,
+	wiki = true,
+	docs = true,
+	doc = true,
+	tests = true,
+	test = true,
+	examples = true,
+	node_modules = true,
+}
+
+--- Dynamically scans top-level directories to find where .lua files actually reside.
+---@param root_path string
+---@return string|string[]|nil
+function M.detect_lua_paths(root_path)
+	-- 1. If there are .lua files directly in the root (like init.lua), use root "."
+	local root_lua = vim.fn.glob(root_path .. "/*.lua", false, true)
+	if #root_lua > 0 then
+		return "."
+	end
+
+	-- 2. Scan all top-level subdirectories for any .lua files inside them
+	local found = {}
+	local handle = vim.uv.fs_scandir(root_path)
+	if handle then
+		while true do
+			local name, ftype = vim.uv.fs_scandir_next(handle)
+			if not name then
+				break
+			end
+
+			if not ftype then
+				local stat = vim.uv.fs_stat(root_path .. "/" .. name)
+				ftype = stat and stat.type
+			end
+
+			-- Check non-hidden, non-asset directories
+			if ftype == "directory" and not name:match("^%.") and not IGNORED_DIRS[name:lower()] then
+				local sub_lua = vim.fn.glob(root_path .. "/" .. name .. "/**/*.lua", false, true)
+				if #sub_lua > 0 then
+					table.insert(found, name)
+				end
+			end
+		end
+	end
+
+	table.sort(found)
+
+	if #found == 0 then
+		return nil
+	elseif #found == 1 then
+		return found[1]
+	else
+		return found
+	end
+end
+
 ---@class ParsedAddonString
 ---@field original_name string The base name of the addon (e.g., 'garrysmod').
 ---@field repo string The resolved repository path (e.g., 'author/repo').
@@ -69,7 +145,6 @@ function M.parse_addon_string(str, aliases)
 	local repo = base_name
 	local alias_val = aliases[base_name]
 
-	-- If the alias points to a full spec string (e.g., "repo@version:pattern"), parse it
 	if type(alias_val) == "string" then
 		local a_repo, a_ver, a_pat = alias_val:match("^([^@:]+)@?([^:]*):?(.*)$")
 		repo = a_repo or base_name
@@ -90,7 +165,6 @@ function M.parse_addon_string(str, aliases)
 		pattern = nil
 	end
 
-	-- Keep the short alias name as original_name so cache folders stay clean (e.g., lua-addons/garrysmod/latest)
 	local original_name = base_name
 	if aliases[base_name] == nil and base_name:match("/") then
 		original_name = base_name:match("([^/]+)$") or base_name

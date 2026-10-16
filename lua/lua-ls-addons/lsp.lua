@@ -178,10 +178,13 @@ local function process_tree(addon_raw, lockfile, settings, visited, visiting, ha
 			local custom = manifest.lua_ls or {}
 			local d_name = (type(addon_raw) == "table" and addon_raw.force_name)
 				or manifest.name
-				or name:gsub("^%l", string.upper)
+				or utils.format_addon_name(name)
 
-			-- Resolve custom subdirectory path(s) (e.g., "lua") from config table or manifest
-			local sub_paths = (type(addon_raw) == "table" and addon_raw.path) or manifest.path
+			-- Resolve custom subdirectory path(s) from config, manifest, or dynamic auto-detection
+			local sub_paths = (type(addon_raw) == "table" and addon_raw.path)
+				or manifest.path
+				or utils.detect_lua_paths(addon_path)
+
 			if sub_paths then
 				local paths_list = type(sub_paths) == "string" and { sub_paths } or sub_paths
 				for _, sub in ipairs(paths_list) do

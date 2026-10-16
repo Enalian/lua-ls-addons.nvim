@@ -15,18 +15,27 @@ local function init_manifest(force)
 		return
 	end
 
-	-- Automatically use the current folder name as the default addon name
 	local folder_name = vim.fn.fnamemodify(cwd, ":t")
-	local default_name = folder_name:gsub("^%l", string.upper)
+	local default_name = utils.format_addon_name(folder_name)
+	local default_version = os.date("%m%d%y")
+	local detected_paths = utils.detect_lua_paths(cwd) or "."
 
-	-- Auto-detect "lua" subfolder if it exists in the project root
-	local default_path = vim.fn.isdirectory(cwd .. "/lua") == 1 and "lua" or "."
+	local path_field_str
+	if type(detected_paths) == "string" then
+		path_field_str = string.format('\t"path": "%s",\n', detected_paths)
+	else
+		local items = {}
+		for _, p in ipairs(detected_paths) do
+			table.insert(items, string.format('\t\t"%s"', p))
+		end
+		path_field_str = '\t"path": [\n' .. table.concat(items, ",\n") .. "\n\t],\n"
+	end
 
 	local template = {
 		"{\n",
 		'\t"name": "' .. default_name .. '",\n',
-		'\t"version": "1.0.0",\n',
-		'\t"path": "' .. default_path .. '",\n',
+		'\t"version": "' .. default_version .. '",\n',
+		path_field_str,
 		'\t"base": "garrysmod",\n',
 		'\t"depends_on": [],\n',
 		'\t"lua_ls": {\n',
